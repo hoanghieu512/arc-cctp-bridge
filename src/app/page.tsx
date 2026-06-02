@@ -36,6 +36,7 @@ import {
   SupportedChainId,
   SUPPORTED_CHAINS,
   CHAIN_CONFIGS,
+  getGasTokenSymbol,
 } from "@/lib/chains";
 import { ProgressSteps } from "@/components/progress-step";
 import { TransferLog } from "@/components/transfer-log";
@@ -268,6 +269,12 @@ export default function Home() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Gas: {getGasTokenSymbol(sourceChain)}
+                {sourceChain === SupportedChainId.ARC_TESTNET && (
+                  <> &mdash; {balance} USDC available (also used for gas)</>
+                )}
+              </p>
             </div>
 
             <div className="space-y-2">
