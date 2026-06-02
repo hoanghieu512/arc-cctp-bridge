@@ -3,7 +3,7 @@
 import { custom, createWalletClient, type Hex } from "viem";
 import { type PublicKey, type Transaction, type VersionedTransaction } from "@solana/web3.js";
 
-import { CHAIN_CONFIGS, type SupportedChainId } from "@/lib/chains";
+import { CHAIN_CONFIGS, SupportedChainId } from "@/lib/chains";
 
 export type EvmClient = ReturnType<typeof createWalletClient>;
 
@@ -135,10 +135,43 @@ export async function ensureEvmChain(
   provider: EvmProvider,
   chainId: SupportedChainId
 ) {
-  await provider.request({
-    method: "wallet_switchEthereumChain",
-    params: [{ chainId: `0x${chainId.toString(16)}` }],
-  });
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: `0x${chainId.toString(16)}` }],
+    });
+  } catch (err) {
+    const code =
+      typeof err === "object" && err !== null && "code" in err
+        ? (err as { code: unknown }).code
+        : null;
+
+    // EIP-3085: error 4902 means the chain is not yet added to the wallet.
+    // For Arc Testnet only, prompt the user to add it, then retry the switch.
+    if (code === 4902 && chainId === SupportedChainId.ARC_TESTNET) {
+      const chain = CHAIN_CONFIGS[chainId].viemChain!;
+      await provider.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: `0x${chainId.toString(16)}`,
+            chainName: chain.name,
+            nativeCurrency: chain.nativeCurrency,
+            rpcUrls: [...chain.rpcUrls.default.http],
+            blockExplorerUrls: chain.blockExplorers
+              ? [chain.blockExplorers.default.url]
+              : ["https://testnet.arcscan.app"],
+          },
+        ],
+      });
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: `0x${chainId.toString(16)}` }],
+      });
+    } else {
+      throw err;
+    }
+  }
 }
 
 export function getEvmWalletClient(
