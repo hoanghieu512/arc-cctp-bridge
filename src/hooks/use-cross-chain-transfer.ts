@@ -93,6 +93,8 @@ export function useCrossChainTransfer() {
   const [currentStep, setCurrentStep] = useState<TransferStep>("idle");
   const [logs, setLogs] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [burnTxHash, setBurnTxHash] = useState<string | null>(null);
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // CCTP Transfer Flow
@@ -312,6 +314,7 @@ export function useCrossChainTransfer() {
       });
 
       addLog(`Burn Tx: ${tx}`);
+      setBurnTxHash(tx);
       return tx;
     } catch (err) {
       setError("Burn failed");
@@ -441,6 +444,7 @@ export function useCrossChainTransfer() {
         .rpc();
 
       addLog(`Solana burn transaction: ${depositForBurnTx}`);
+      setBurnTxHash(depositForBurnTx);
       return depositForBurnTx;
     } catch (err) {
       setError("Solana burn failed");
@@ -559,6 +563,7 @@ export function useCrossChainTransfer() {
         });
 
         addLog(`Mint Tx: ${tx}`);
+        setMintTxHash(tx);
         setCurrentStep("completed");
         break;
       } catch (err) {
@@ -709,6 +714,7 @@ export function useCrossChainTransfer() {
         .rpc();
 
       addLog(`Solana mint transaction: ${receiveMessageTx}`);
+      setMintTxHash(receiveMessageTx);
       setCurrentStep("completed");
       return receiveMessageTx;
     } catch (err) {
@@ -931,6 +937,8 @@ export function useCrossChainTransfer() {
     setCurrentStep("idle");
     setLogs([]);
     setError(null);
+    setBurnTxHash(null);
+    setMintTxHash(null);
   };
 
   return {
@@ -940,5 +948,7 @@ export function useCrossChainTransfer() {
     executeTransfer,
     getBalance,
     reset,
+    burnTxHash,
+    mintTxHash,
   };
 }

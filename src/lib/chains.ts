@@ -303,6 +303,15 @@ export function getGasTokenSymbol(chainId: SupportedChainId): string {
   return CHAIN_CONFIGS[chainId].viemChain?.nativeCurrency.symbol ?? "ETH";
 }
 
+export function getExplorerTxUrl(
+  chainId: SupportedChainId,
+  txHash: string,
+): string | null {
+  const baseUrl = CHAIN_CONFIGS[chainId].viemChain?.blockExplorers?.default.url;
+  if (!baseUrl) return null;
+  return `${baseUrl}/tx/${txHash}`;
+}
+
 export const SOLANA_RPC_ENDPOINT = "https://api.devnet.solana.com";
 
 export const IRIS_API_URL = "https://iris-api-sandbox.circle.com";

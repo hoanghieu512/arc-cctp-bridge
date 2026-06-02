@@ -52,7 +52,7 @@ import {
 } from "@/lib/browser-wallets";
 
 export default function Home() {
-  const { currentStep, logs, error, executeTransfer, getBalance, reset } =
+  const { currentStep, logs, error, executeTransfer, getBalance, reset, burnTxHash, mintTxHash } =
     useCrossChainTransfer();
   const [sourceChain, setSourceChain] = useState<SupportedChainId>(
     SupportedChainId.ARC_TESTNET,
@@ -330,7 +330,13 @@ export default function Home() {
             )}
           </div>
 
-          <ProgressSteps currentStep={currentStep} />
+          <ProgressSteps
+            currentStep={currentStep}
+            burnTxHash={burnTxHash}
+            mintTxHash={mintTxHash}
+            sourceChainId={sourceChain}
+            destinationChainId={destinationChain}
+          />
 
           <TransferLog logs={logs} />
           {error && <div className="text-red-500 text-center">{error}</div>}
