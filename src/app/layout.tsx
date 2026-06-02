@@ -20,8 +20,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Circle CCTP USDC Transfer",
-  description: "Sample Application for CCTP USDC Transfer",
+  title: "Arc CCTP Bridge",
+  description: "Cross-chain USDC bridge with Arc Testnet support, built on Circle CCTP v2",
 };
 
 export default function RootLayout({

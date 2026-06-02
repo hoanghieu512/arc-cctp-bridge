@@ -134,7 +134,7 @@ export function ProgressSteps({
                   "w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300",
                   state === "active" && "bg-blue-600 text-white",
                   state === "done" && "bg-green-500 text-white",
-                  state === "pending" && "bg-gray-200 text-gray-500",
+                  state === "pending" && "bg-slate-700 text-slate-400",
                 )}
               >
                 {state === "active" ? (

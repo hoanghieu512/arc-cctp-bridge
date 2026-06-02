@@ -183,12 +183,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-background p-8">
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-center">
-            Crosschain USDC Transfer
+          <CardTitle className="text-center text-2xl font-bold">
+            Arc CCTP Bridge
           </CardTitle>
+          <p className="text-center font-mono text-sm text-muted-foreground tracking-widest mt-1">
+            {'{ CROSS-CHAIN USDC }'}
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-3">
