@@ -74,7 +74,7 @@ The app also supports Arbitrum Sepolia, Avalanche Fuji, Optimism Sepolia, Polygo
 
 ## Verified routes
 
-All four Arc Testnet routes verified June 2026.
+All four Arc Testnet routes verified June 2026. Demo transactions executed from [`0x7Be50ecBA4f140e1C847812c9fEc9eBDD030dA0D`](https://testnet.arcscan.app/address/0x7Be50ecBA4f140e1C847812c9fEc9eBDD030dA0D).
 
 | Route | Status | Burn tx | Mint tx |
 |-------|--------|---------|---------|
