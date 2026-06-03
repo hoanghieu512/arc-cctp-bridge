@@ -78,10 +78,10 @@ All four Arc Testnet routes verified June 2026.
 
 | Route | Status | Burn tx | Mint tx |
 |-------|--------|---------|---------|
-| Arc Testnet → Ethereum Sepolia | ✅ Pass | [`PASTE_BURN_TX`](https://testnet.arcscan.app/tx/PASTE_BURN_TX) | [`PASTE_MINT_TX`](https://sepolia.etherscan.io/tx/PASTE_MINT_TX) |
-| Arc Testnet → Base Sepolia | ✅ Pass | [`PASTE_BURN_TX`](https://testnet.arcscan.app/tx/PASTE_BURN_TX) | [`PASTE_MINT_TX`](https://sepolia.basescan.org/tx/PASTE_MINT_TX) |
-| Base Sepolia → Arc Testnet | ✅ Pass | [`PASTE_BURN_TX`](https://sepolia.basescan.org/tx/PASTE_BURN_TX) | [`PASTE_MINT_TX`](https://testnet.arcscan.app/tx/PASTE_MINT_TX) |
-| Ethereum Sepolia → Arc Testnet | ✅ Pass | [`PASTE_BURN_TX`](https://sepolia.etherscan.io/tx/PASTE_BURN_TX) | [`PASTE_MINT_TX`](https://testnet.arcscan.app/tx/PASTE_MINT_TX) |
+| Arc Testnet → Ethereum Sepolia | ✅ Pass | [`0xb968fc0b198cc0d63c28ca69eb8ba59be31a373dc0cec7eb50af1e44475717f0`](https://testnet.arcscan.app/tx/0xb968fc0b198cc0d63c28ca69eb8ba59be31a373dc0cec7eb50af1e44475717f0) | [`0x03587a5306ee3222205c2fc39bcfcb88cbbb56cf7070a48be9f368117ee2c3fd`](https://sepolia.etherscan.io/tx/0x03587a5306ee3222205c2fc39bcfcb88cbbb56cf7070a48be9f368117ee2c3fd) |
+| Arc Testnet → Base Sepolia | ✅ Pass | [`0xf4a8b805bf38d9b852a16d5beac48af1397f913f04d2ce750930a3a7022d5283`](https://testnet.arcscan.app/tx/0xf4a8b805bf38d9b852a16d5beac48af1397f913f04d2ce750930a3a7022d5283) | [`0x4b30c48cc65fa0ad7e8d6713442fbc37302ebb8be6f56c1fb12a0c4ea8c40ae3`](https://sepolia.basescan.org/tx/0x4b30c48cc65fa0ad7e8d6713442fbc37302ebb8be6f56c1fb12a0c4ea8c40ae3) |
+| Base Sepolia → Arc Testnet | ✅ Pass | [`0x45f6e0f5dec193a51aa29e1f51e2286eb76df1283bc99ef9648b71bb3d260dd2`](https://sepolia.basescan.org/tx/0x45f6e0f5dec193a51aa29e1f51e2286eb76df1283bc99ef9648b71bb3d260dd2) | [`0x012ad67ca3a8e38089344ff339f4f721a96f5f4f09010ada224e29e84fcaf0af`](https://testnet.arcscan.app/tx/0x012ad67ca3a8e38089344ff339f4f721a96f5f4f09010ada224e29e84fcaf0af) |
+| Ethereum Sepolia → Arc Testnet | ✅ Pass | [`0xbd6060960c569687a10b0658e08a484fb0663b83d8ae86f17f2290eb89b85e20`](https://sepolia.etherscan.io/tx/0xbd6060960c569687a10b0658e08a484fb0663b83d8ae86f17f2290eb89b85e20) | [`0x8bc332aa4aec1998acf8b6cb565b97823a8fada3cfdfc4466aca1cc45c7778a1`](https://testnet.arcscan.app/tx/0x8bc332aa4aec1998acf8b6cb565b97823a8fada3cfdfc4466aca1cc45c7778a1) |
 
 ---
 
