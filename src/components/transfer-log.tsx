@@ -39,10 +39,13 @@ export function TransferLog({ logs }: { logs: string[] }) {
   }, [logs]);
 
   return (
-    <div ref={containerRef} className="w-full max-w-2xl mx-auto mt-8 p-4 bg-muted rounded-lg h-64 overflow-y-auto">
-      <div className="text-sm font-mono">
+    <div
+      ref={containerRef}
+      className="mx-auto h-64 w-full max-w-2xl overflow-y-auto rounded-2xl border border-border/60 bg-card/50 p-4 backdrop-blur"
+    >
+      <div className="space-y-1 font-mono text-sm">
         {logs.map((log, index) => (
-          <div key={index} className="text-gray-700">
+          <div key={index} className="text-muted-foreground">
             {log} {/* Timestamp is now pre-rendered in the log message */}
           </div>
         ))}

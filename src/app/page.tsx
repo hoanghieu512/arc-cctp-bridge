@@ -19,29 +19,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useCrossChainTransfer } from "@/hooks/use-cross-chain-transfer";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+  ArrowUpDown,
+  Bell,
+  RefreshCw,
+  Settings,
+  Wallet,
+} from "lucide-react";
+
+import { useCrossChainTransfer } from "@/hooks/use-cross-chain-transfer";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ParticleButton } from "@/components/ui/particle-button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ChainCombobox, ChainToken } from "@/components/chain-combobox";
+import { TransferTypeSelector } from "@/components/transfer-type";
+import { ProgressSteps } from "@/components/progress-step";
+import { TransferLog } from "@/components/transfer-log";
+import { Timer } from "@/components/timer";
 import {
   SupportedChainId,
   SUPPORTED_CHAINS,
   CHAIN_CONFIGS,
   getGasTokenSymbol,
 } from "@/lib/chains";
-import { ProgressSteps } from "@/components/progress-step";
-import { TransferLog } from "@/components/transfer-log";
-import { Timer } from "@/components/timer";
-import { TransferTypeSelector } from "@/components/transfer-type";
 import {
   connectEvmWallet,
   connectSolanaWallet,
@@ -52,8 +64,16 @@ import {
 } from "@/lib/browser-wallets";
 
 export default function Home() {
-  const { currentStep, logs, error, executeTransfer, getBalance, reset, burnTxHash, mintTxHash } =
-    useCrossChainTransfer();
+  const {
+    currentStep,
+    logs,
+    error,
+    executeTransfer,
+    getBalance,
+    reset,
+    burnTxHash,
+    mintTxHash,
+  } = useCrossChainTransfer();
   const [sourceChain, setSourceChain] = useState<SupportedChainId>(
     SupportedChainId.ARC_TESTNET,
   );
@@ -84,6 +104,17 @@ export default function Home() {
   const missingRequiredWallet =
     (needsEvmWallet && !wallets.evm) || (needsSolanaWallet && !wallets.solana);
 
+  const isCompleted = currentStep === "completed";
+  const numericAmount = parseFloat(amount);
+  const numericBalance = parseFloat(balance) || 0;
+  const overBalance = numericAmount > numericBalance;
+  const canTransfer =
+    !isTransferring &&
+    !isCompleted &&
+    !!amount &&
+    numericAmount > 0 &&
+    !missingRequiredWallet;
+
   const handleStartTransfer = async () => {
     setIsTransferring(true);
     setShowFinalTime(false);
@@ -110,6 +141,11 @@ export default function Home() {
     setIsTransferring(false);
     setShowFinalTime(false);
     setElapsedSeconds(0);
+  };
+
+  const handleSwapDirection = () => {
+    setSourceChain(destinationChain);
+    setDestinationChain(sourceChain);
   };
 
   const handleEvmWalletClick = async () => {
@@ -162,6 +198,16 @@ export default function Home() {
     }
   };
 
+  const handleConnectRequired = () => {
+    if (needsEvmWallet && !wallets.evm) {
+      void handleEvmWalletClick();
+      return;
+    }
+    if (needsSolanaWallet && !wallets.solana) {
+      void handleSolanaWalletClick();
+    }
+  };
+
   useEffect(() => {
     const wrapper = async () => {
       try {
@@ -176,196 +222,377 @@ export default function Home() {
   }, [sourceChain, wallets, getBalance]);
 
   const formatAddress = (address: string | null) => {
-    if (!address) {
-      return null;
-    }
+    if (!address) return null;
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const destinationChains = SUPPORTED_CHAINS.filter(
+    (chainId) => chainId !== sourceChain,
+  );
+  const receiveDisplay = amount && numericAmount > 0 ? amount : "0.00";
+  const estimatedTime =
+    transferType === "fast" ? "~30 sec – 2 min" : "~13 – 19 min";
+
   return (
-    <div className="min-h-screen bg-background p-8">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold">
-            Arc CCTP Bridge
-          </CardTitle>
-          <p className="text-center font-mono text-sm text-muted-foreground tracking-widest mt-1">
-            {'{ CROSS-CHAIN USDC }'}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-3">
-            <div className="text-center">
-              <Button variant="outline" onClick={handleEvmWalletClick}>
-                {wallets.evm ? "Disconnect EVM Wallet" : "Connect EVM Wallet"}
-              </Button>
-              <p className="text-sm text-muted-foreground mt-2">
-                {wallets.evm
-                  ? `${formatAddress(wallets.evm.address)}${
-                      wallets.evm.providerInfo?.name
-                        ? ` (${wallets.evm.providerInfo.name})`
-                        : ""
-                    }`
-                  : "Required for EVM source or destination chains"}
-              </p>
-              {showEvmWalletPicker && (
-                <div className="mt-3 space-y-2 rounded-lg border bg-white p-3 text-left">
-                  <p className="text-sm font-medium">Choose EVM wallet</p>
-                  <div className="flex gap-3 flex-wrap">
-                    {evmWalletOptions.map((option) => (
-                      <Button
-                        key={option.info.uuid}
-                        variant="outline"
-                        onClick={() => handleEvmWalletSelect(option)}
-                      >
-                        {option.info.name}
-                      </Button>
-                    ))}
+    <div className="relative min-h-dvh overflow-hidden">
+      <div className="app-glow" />
+
+      <div className="relative z-10 mx-auto flex min-h-dvh max-w-6xl flex-col px-4 sm:px-6">
+        {/* ---------------- Top navigation ---------------- */}
+        <header className="flex items-center justify-between gap-3 py-5">
+          <div className="flex items-center gap-3">
+            <span
+              className="text-xl font-bold tracking-tight"
+              title="Arc CCTP Bridge"
+            >
+              Arc<span className="text-primary">_Bridge</span>
+            </span>
+            <span className="hidden rounded-full border border-border/60 bg-card/40 px-3 py-1 font-mono text-[11px] tracking-[0.18em] text-muted-foreground backdrop-blur sm:inline-block">
+              {"{ CROSS-CHAIN USDC }"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Notifications"
+              title="No new notifications"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/50 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Bell size={18} />
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
+            </button>
+
+            {needsSolanaWallet && (
+              <WalletPill
+                label="Solana"
+                address={wallets.solana?.address ?? null}
+                onClick={handleSolanaWalletClick}
+                formatAddress={formatAddress}
+              />
+            )}
+            <WalletPill
+              label="EVM"
+              address={wallets.evm?.address ?? null}
+              providerName={wallets.evm?.providerInfo?.name}
+              onClick={handleEvmWalletClick}
+              formatAddress={formatAddress}
+            />
+          </div>
+        </header>
+
+        {/* ---------------- Swap / bridge card ---------------- */}
+        <main className="flex flex-1 flex-col items-center pb-16 pt-6 sm:pt-10">
+          <div className="w-full max-w-md rounded-[28px] border border-border/60 bg-card/60 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            {/* Card header: title + settings */}
+            <div className="mb-2 flex items-center justify-between px-3 pt-1">
+              <div className="flex flex-col">
+                <span className="text-base font-semibold leading-none">
+                  Bridge USDC
+                </span>
+                <span className="mt-1 text-xs text-muted-foreground">
+                  Powered by Circle CCTP v2
+                </span>
+              </div>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                    aria-label="Transfer settings"
+                  >
+                    <Settings size={18} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold">Transfer type</p>
+                    <p className="text-xs text-muted-foreground">
+                      Choose how fast finality is reached.
+                    </p>
                   </div>
+                  <TransferTypeSelector
+                    value={transferType}
+                    onChange={setTransferType}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {transferType === "fast"
+                      ? "Faster transfers with lower finality threshold (1000 blocks)."
+                      : "Standard transfers with higher finality (2000 blocks)."}
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* You Pay */}
+            <div className="rounded-3xl bg-secondary/40 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">
+                  You send
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Gas: {getGasTokenSymbol(sourceChain)}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <ChainCombobox
+                  value={sourceChain}
+                  chains={SUPPORTED_CHAINS}
+                  onChange={setSourceChain}
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  max={numericBalance || undefined}
+                  step="any"
+                  aria-label="Amount to send"
+                  className="w-0 flex-1 bg-transparent text-right font-mono text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span>
+                    Balance:{" "}
+                    <span className="text-foreground/90">{balance}</span> USDC
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAmount(balance)}
+                    className="font-semibold text-primary transition-opacity hover:opacity-80"
+                  >
+                    Max
+                  </button>
+                </div>
+                <span
+                  className={cn(
+                    "font-mono text-muted-foreground",
+                    overBalance && "text-destructive",
+                  )}
+                >
+                  ${receiveDisplay}
+                </span>
+              </div>
+            </div>
+
+            {/* Direction toggle */}
+            <div className="relative z-10 -my-3 flex justify-center">
+              <button
+                type="button"
+                onClick={handleSwapDirection}
+                aria-label="Swap source and destination"
+                className="group flex h-11 w-11 items-center justify-center rounded-full border-4 border-card bg-secondary text-foreground shadow-lg transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <ArrowUpDown
+                  size={18}
+                  className="transition-transform duration-300 group-hover:rotate-180"
+                />
+              </button>
+            </div>
+
+            {/* Receive */}
+            <div className="rounded-3xl bg-secondary/40 p-4">
+              <span className="text-sm font-medium text-muted-foreground">
+                You receive
+              </span>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <ChainCombobox
+                  value={destinationChain}
+                  chains={destinationChains}
+                  onChange={setDestinationChain}
+                />
+                <span className="w-0 flex-1 truncate text-right font-mono text-3xl font-semibold tracking-tight text-foreground">
+                  {receiveDisplay}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+                <span>USDC on {CHAIN_CONFIGS[destinationChain].name}</span>
+                <span className="font-mono">${receiveDisplay}</span>
+              </div>
+
+              {/* Route summary: rate, fee, gas, estimated time */}
+              <div className="mt-3 space-y-2 border-t border-border/50 pt-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Rate</span>
+                  <span className="font-mono">1 USDC = 1 USDC</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Bridge fee</span>
+                  <span className="font-mono text-emerald-400">Free</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Network gas</span>
+                  <span className="font-mono">
+                    paid in {getGasTokenSymbol(sourceChain)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Estimated time</span>
+                  <span className="font-mono text-foreground/90">
+                    {estimatedTime}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {overBalance && (
+              <p className="mt-3 px-2 text-center text-xs text-destructive">
+                Amount exceeds your available balance.
+              </p>
+            )}
+
+            {/* Primary CTA */}
+            <div className="mt-3 px-1">
+              {missingRequiredWallet ? (
+                <Button
+                  onClick={handleConnectRequired}
+                  className="h-14 w-full gap-2 rounded-2xl bg-gradient-to-r from-primary to-sky-400 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/30 hover:opacity-95"
+                >
+                  <Wallet size={18} />
+                  Connect Wallet
+                </Button>
+              ) : (
+                <ParticleButton
+                  onClick={handleStartTransfer}
+                  disabled={!canTransfer}
+                  className="h-14 w-full rounded-2xl bg-gradient-to-r from-primary to-sky-400 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/30 hover:opacity-95 disabled:opacity-40"
+                >
+                  {isTransferring
+                    ? "Bridging…"
+                    : isCompleted
+                      ? "Bridge complete"
+                      : "Bridge USDC"}
+                </ParticleButton>
+              )}
+
+              {(isCompleted || currentStep === "error") && (
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  className="mt-2 h-10 w-full gap-2 rounded-2xl text-muted-foreground hover:text-foreground"
+                >
+                  <RefreshCw size={16} />
+                  Start a new transfer
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Live status under the card */}
+          {(isTransferring ||
+            showFinalTime ||
+            currentStep !== "idle" ||
+            logs.length > 0) && (
+            <div className="mt-8 w-full max-w-2xl space-y-6">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Elapsed
+                </span>
+                {showFinalTime ? (
+                  <div className="font-mono text-2xl">
+                    {Math.floor(elapsedSeconds / 60)
+                      .toString()
+                      .padStart(2, "0")}
+                    :{(elapsedSeconds % 60).toString().padStart(2, "0")}
+                  </div>
+                ) : (
+                  <Timer isRunning={isTransferring} onTick={setElapsedSeconds} />
+                )}
+              </div>
+
+              <ProgressSteps
+                currentStep={currentStep}
+                burnTxHash={burnTxHash}
+                mintTxHash={mintTxHash}
+                sourceChainId={sourceChain}
+                destinationChainId={destinationChain}
+              />
+
+              {logs.length > 0 && <TransferLog logs={logs} />}
+
+              {error && (
+                <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-center text-sm text-destructive">
+                  {error}
                 </div>
               )}
             </div>
-            <div className="text-center">
-              <Button variant="outline" onClick={handleSolanaWalletClick}>
-                {wallets.solana
-                  ? "Disconnect Solana Wallet"
-                  : "Connect Solana Wallet"}
-              </Button>
-              <p className="text-sm text-muted-foreground mt-2">
-                {wallets.solana
-                  ? formatAddress(wallets.solana.address)
-                  : "Required for Solana source or destination chains"}
-              </p>
-            </div>
-          </div>
-          <p className="text-sm text-center">
-              Make sure your wallet can complete the transfer on the destination
-              chain.
-            </p>
-          <div className="space-y-2">
-            <Label>Transfer Type</Label>
-            <TransferTypeSelector
-              value={transferType}
-              onChange={setTransferType}
-            />
-            <p className="text-sm text-muted-foreground">
-              {transferType === "fast"
-                ? "Faster transfers with lower finality threshold (1000 blocks)"
-                : "Standard transfers with higher finality (2000 blocks)"}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Source Chain</Label>
-              <Select
-                value={String(sourceChain)}
-                onValueChange={(value) => setSourceChain(Number(value))}
+          )}
+        </main>
+      </div>
+
+      {/* EVM wallet picker */}
+      <Dialog open={showEvmWalletPicker} onOpenChange={setShowEvmWalletPicker}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Choose a wallet</DialogTitle>
+            <DialogDescription>
+              Multiple EVM wallets were detected. Pick one to connect.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {evmWalletOptions.map((option) => (
+              <Button
+                key={option.info.uuid}
+                variant="secondary"
+                className="h-12 justify-start gap-3 rounded-xl"
+                onClick={() => handleEvmWalletSelect(option)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_CONFIGS[chainId].name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Gas: {getGasTokenSymbol(sourceChain)}
-                {sourceChain === SupportedChainId.ARC_TESTNET && (
-                  <> &mdash; {balance} USDC available (also used for gas)</>
-                )}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Destination Chain</Label>
-              <Select
-                value={String(destinationChain)}
-                onValueChange={(value) => setDestinationChain(Number(value))}
-                disabled={!sourceChain}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select destination chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.filter(
-                    (chainId) => chainId !== sourceChain,
-                  ).map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_CONFIGS[chainId].name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Amount (USDC)</Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              min="0"
-              max={parseFloat(balance)}
-              step="any"
-            />
-            <p className="text-sm text-muted-foreground">{balance} available</p>
-          </div>
-
-          <div className="text-center">
-            {showFinalTime ? (
-              <div className="text-2xl font-mono">
-                <span>
-                  {Math.floor(elapsedSeconds / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                </span>
-                :
-                <span>{(elapsedSeconds % 60).toString().padStart(2, "0")}</span>
-              </div>
-            ) : (
-              <Timer isRunning={isTransferring} onTick={setElapsedSeconds} />
-            )}
-          </div>
-
-          <ProgressSteps
-            currentStep={currentStep}
-            burnTxHash={burnTxHash}
-            mintTxHash={mintTxHash}
-            sourceChainId={sourceChain}
-            destinationChainId={destinationChain}
-          />
-
-          <TransferLog logs={logs} />
-          {error && <div className="text-red-500 text-center">{error}</div>}
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={handleStartTransfer}
-              disabled={
-                isTransferring ||
-                currentStep === "completed" ||
-                !amount ||
-                parseFloat(amount) <= 0 ||
-                missingRequiredWallet
-              }
-            >
-              {currentStep === "completed"
-                ? "Transfer Complete"
-                : "Start Transfer"}
-            </Button>
-            {(currentStep === "completed" || currentStep === "error") && (
-              <Button variant="outline" onClick={handleReset}>
-                Reset
+                {option.info.name}
               </Button>
-            )}
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function WalletPill({
+  label,
+  address,
+  providerName,
+  onClick,
+  formatAddress,
+}: {
+  label: string;
+  address: string | null;
+  providerName?: string;
+  onClick: () => void;
+  formatAddress: (address: string | null) => string | null;
+}) {
+  const connected = !!address;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={
+        connected
+          ? `${providerName ? providerName + " · " : ""}Click to disconnect`
+          : `Connect ${label} wallet`
+      }
+      className={cn(
+        "flex items-center gap-2 rounded-full border border-border/60 bg-card/50 py-1.5 pl-3 pr-1.5 text-sm font-medium transition-colors hover:border-primary/50",
+        !connected && "text-muted-foreground",
+      )}
+    >
+      {connected ? (
+        <>
+          <span className="font-mono text-foreground">
+            {formatAddress(address)}
+          </span>
+          <span className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-sky-400" />
+        </>
+      ) : (
+        <>
+          <Wallet size={15} />
+          <span className="pr-1.5">Connect {label}</span>
+        </>
+      )}
+    </button>
   );
 }

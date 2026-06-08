@@ -26,6 +26,7 @@
 
 # Claude Code local settings (machine-specific, not for repo)
 .claude/settings.local.json
+.claude/launch.json
 
 # debug
 npm-debug.log*
